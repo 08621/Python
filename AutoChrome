@@ -1,0 +1,53 @@
+# 在.bash_profile 檔案加入路徑，加入下載的 chromedriver 路徑。
+#PATH =$PATH: ~ / TOOLS / webdriver
+#或者將chromedriver拷貝到python目錄下
+# 加入後就可直接呼叫 webdriver.Chrome() 啟動 Chrome 瀏覽器。
+# -*- coding: UTF-8 -*-
+
+
+from bs4 import BeautifulSoup as bs
+from selenium import webdriver
+import time
+import codecs
+
+url = 'http://m.booksrc.net/book/1000021869.html'
+dr = webdriver.Chrome()
+dr.get(url)
+soup = bs(dr.page_source, 'html.parser')
+
+print ("這是現行網址 : %s" % dr.current_url)
+
+mb = open('d:/TEMP/book/簡介.txt', 'a', encoding='utf-8')
+
+
+for block in soup.select('a'):      #將每個A屬性循環帶入
+    mb.write("\n")                  #換行
+    mb.write(block.text)            #將 A屬性的文字寫入檔案
+    print (block.text)              #顯示寫入文字內容
+    url_a = str(block.get('href'))  #讀取 A屬性的連結
+    if '/book/1000021869/' in url_a: #由判斷去除不要的連結
+        url_a = '	http://m.booksrc.net' + url_a
+        mb.write(url_a)
+
+mb.write(dr.page_source) #寫入網頁所有原始碼
+mb.close
+
+divs = soup.select('div','mod_book book_contents')
+
+for d in divs:
+    url_b = str(d.get('href'))
+    rest = 'http://m.booksrc.net' + url_b
+    mc = open('d:/TEMP/book/%s.txt' % d.text, 'a', encoding='utf-8')
+    drs = webdriver.Chrome()
+    drs.get(rest)
+    time.sleep(2)
+    soups = bs(drs.page_source, 'html.parser')
+    # print("這是呼叫網址 : %s" % drs.current_url)
+    for blocks in soups.select('p'):
+        mc.write("\n")  # 換行
+        mc.write(blocks.text)
+        print(blocks.text)  # 顯示文字內容
+        mc.close
+    drs.quit()
+
+dr.quit()
