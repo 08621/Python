@@ -1,0 +1,63 @@
+# 在.bash_profile 檔案加入路徑，加入下載的 chromedriver 路徑。
+#PATH =$PATH: ~ / TOOLS / webdriver
+#或者將chromedriver拷貝到python目錄下
+# 加入後就可直接呼叫 webdriver.Chrome() 啟動 Chrome 瀏覽器。
+# -*- coding: UTF-8 -*-
+
+import xlwt
+import time
+import datetime
+import codecs
+import os
+from os.path import join, getsize
+from bs4 import BeautifulSoup as bs
+from selenium import webdriver
+
+
+url = 'http://km.iet/News/news.asp?iPageNo=1&Type=0'
+dr = webdriver.Chrome()
+dr.get(url)
+print("這是現行網址 : %s" % dr.current_url)
+
+wb = xlwt.Workbook()  # 宣告excel檔案
+sh = wb.add_sheet(u'一般消息')  # 宣告新增一個新sheet
+sh.write(0, 0, u'消息類別')  # 新增某欄位內容 write(列, 欄, '欄位內容')
+sh.write(0, 1, u'發表時間')
+sh.write(0, 2, u'最新消息')
+sh.write(0, 3, u'連結網址')
+
+soup = bs(dr.page_source, 'html.parser')
+
+item = 0
+for link in soup.select('td.MasterHeader > a'):
+    new_a = str(link.get('href'))
+    if 'news.asp?iPageNo=' in new_a:
+        item +=1
+print ('消息分頁有:%s' % item)
+
+h = 0
+for block in soup.select('td.MasterHeader'):
+    h += 1
+    sh.write(h, 0, block.text)
+    # print ('h:%s,block.text:%s' %(h,block.text))
+
+i = 0
+for block in soup.select('tr > td'):
+    if '2017/' in block.text:
+        if len(block.text) < 11 and len(block.text) > 7:
+            i += 1
+            sh.write(i, 1, str(block.text))
+            print('block.text: %s' % block.text)
+k = 0
+for block in soup.select('td > a'):  # 將每個A屬性循環帶入
+    url_a = str(block.get('href'))  # 讀取 A屬性的連結
+    if 'newscontent.asp?' in url_a:  # 由判斷去除不要的連結
+        k = k + 1
+        url_a = 'http://km.iet/News/' + url_a
+        sh.write(k, 2, block.text)
+        sh.write(k, 3, url_a)
+
+iisi_list = 'd:/TEMP/IISI/' + time.strftime('%Y%m%d%H%M') + '.xls'  # 檔名會依年月日時分生成
+wb.save(iisi_list)  # excel存檔
+dr.quit()
+
